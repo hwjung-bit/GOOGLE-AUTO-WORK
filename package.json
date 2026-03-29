@@ -1,0 +1,31 @@
+{
+  "name": "google-auto-work",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.29.3",
+  "scripts": {
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "turbo lint",
+    "type-check": "turbo type-check",
+    "db:generate": "pnpm --filter @google-auto-work/db generate",
+    "db:migrate": "pnpm --filter @google-auto-work/db migrate:dev",
+    "db:push": "pnpm --filter @google-auto-work/db db:push",
+    "db:studio": "pnpm --filter @google-auto-work/db studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.3"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "esbuild",
+      "msgpackr-extract",
+      "prisma",
+      "sharp",
+      "unrs-resolver"
+    ]
+  }
+}

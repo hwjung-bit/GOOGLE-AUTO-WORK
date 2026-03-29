@@ -1,0 +1,152 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  googleId  String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  oauthToken      OAuthToken?
+  rules           AutomationRule[]
+  triggers        AutomationTrigger[]
+  executionLogs   ExecutionLog[]
+  emailDrafts     EmailDraft[]
+  documentSummaries DocumentSummary[]
+  accessLogs      AccessLog[]
+}
+
+model OAuthToken {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessTokenEnc  String
+  refreshTokenEnc String
+  scope           String
+  expiresAt       DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// Automation rule: IF conditions THEN actions
+// conditions: RuleCondition[] - { field, operator, value }
+// actions: RuleAction[] - { type, params }
+model AutomationRule {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  priority    Int      @default(0)
+  conditions  Json
+  actions     Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId, isActive, priority])
+}
+
+model AutomationTrigger {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  triggerType TriggerType
+  isActive    Boolean     @default(true)
+  cronExpr    String?
+  timezone    String?     @default("Asia/Seoul")
+  ruleIds     String[]    @default([])
+  lastFiredAt DateTime?
+  nextFireAt  DateTime?
+  bullJobId   String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId, isActive])
+}
+
+enum TriggerType {
+  NEW_EMAIL
+  SCHEDULED
+  MANUAL
+}
+
+model ExecutionLog {
+  id              String          @id @default(cuid())
+  userId          String
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  triggerId       String?
+  ruleId          String?
+  emailId         String?
+  emailSubject    String?
+  emailFrom       String?
+  status          ExecutionStatus
+  actionsExecuted Json            @default("[]")
+  errorMessage    String?
+  durationMs      Int?
+  createdAt       DateTime        @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([userId, status])
+}
+
+enum ExecutionStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+  SKIPPED
+}
+
+model EmailDraft {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailId      String
+  emailSubject String?
+  emailFrom    String?
+  style        String
+  draftContent String
+  gmailDraftId String?
+  status       String   @default("generated")
+  createdAt    DateTime @default(now())
+
+  @@index([userId, emailId])
+}
+
+model DocumentSummary {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  driveFileId   String
+  driveFileName String
+  mimeType      String?
+  summary       String
+  keyPoints     Json     @default("[]")
+  sourceEmailId String?
+  createdAt     DateTime @default(now())
+
+  @@unique([userId, driveFileId, sourceEmailId])
+  @@index([userId])
+}
+
+model AccessLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String
+  ipAddress String?
+  userAgent String?
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}

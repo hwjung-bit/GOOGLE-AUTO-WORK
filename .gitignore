@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+.turbo/
+*.env
+*.env.local
+.env.*
+!.env.example
+.DS_Store
+*.log
+.pnpm-store/
+prisma/migrations/
+*.db
+*.sqlite
